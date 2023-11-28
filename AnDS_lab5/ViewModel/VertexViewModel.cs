@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using System.Windows.Shapes;
+// ReSharper disable NonReadonlyMemberInGetHashCode
 
 namespace AnDS_lab5.ViewModel;
 
@@ -84,6 +85,12 @@ public sealed class VertexViewModel : INotifyPropertyChanged
     {
         foreach (var edgePair in Edges)
         {
+            if (edgePair.Item1 is CircleEdgeViewModel circleEdgeViewModel)
+            {
+                circleEdgeViewModel.X = _x;
+                continue;
+            }
+            
             if (edgePair.Item2 == 1)
             {
                 edgePair.Item1.X1 = _x;
@@ -99,6 +106,12 @@ public sealed class VertexViewModel : INotifyPropertyChanged
     {
         foreach (var edgePair in Edges)
         {
+            if (edgePair.Item1 is CircleEdgeViewModel circleEdgeViewModel)
+            {
+                circleEdgeViewModel.Y = _y;
+                continue;
+            }
+            
             if (edgePair.Item2 == 1)
             {
                 edgePair.Item1.Y1 = _y;
@@ -112,4 +125,19 @@ public sealed class VertexViewModel : INotifyPropertyChanged
 
     public override string ToString()
         => Text;
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not VertexViewModel other)
+        {
+            return false;
+        }
+
+        return Text.Equals(other.Text) && Math.Abs(X - other.X) < 0.01 && Math.Abs(Y - other.Y) < 0.01;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_text, _x, _y, _box, _ellipse);
+    }
 }

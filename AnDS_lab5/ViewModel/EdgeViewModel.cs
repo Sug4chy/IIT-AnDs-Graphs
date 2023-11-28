@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace AnDS_lab5.ViewModel;
 
-public sealed class EdgeViewModel : INotifyPropertyChanged
+public class EdgeViewModel : INotifyPropertyChanged
 {
     private VertexViewModel _vertex1 = null!;
     private VertexViewModel _vertex2 = null!;
@@ -56,7 +56,7 @@ public sealed class EdgeViewModel : INotifyPropertyChanged
     
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
