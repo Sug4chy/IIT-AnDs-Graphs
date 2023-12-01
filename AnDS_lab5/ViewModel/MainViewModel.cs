@@ -13,6 +13,7 @@ namespace AnDS_lab5.ViewModel;
 
 public sealed class MainViewModel : INotifyPropertyChanged
 {
+    private EditMode _mode;
     private readonly MainWindow _window = null!;
     private VertexViewModel? _selectedVertex1;
     private VertexViewModel? _selectedVertex2;
@@ -42,15 +43,29 @@ public sealed class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+
+    private EditMode Mode
+    {
+        get => _mode;
+        set
+        {
+            _mode = value;
+            OnPropertyChanged();
+        }
+    }
     
     public ICommand AddVertexCommand { get; } = null!;
     public ICommand AddEdgeCommand { get; } = null!;
+    public ICommand SetCreatingModeCommand { get; } = null!;
+    public ICommand SetDeletingModeCommand { get; } = null!;
 
     public MainViewModel(MainWindow window)
     {
         _window = window;
-        AddVertexCommand = new RelayCommand(AddVertex);
-        AddEdgeCommand = new RelayCommand(AddEdge);
+        AddVertexCommand = new RelayCommand(AddVertex, _ => Mode == EditMode.Add);
+        AddEdgeCommand = new RelayCommand(AddEdge, _ => Mode == EditMode.Add);
+        SetCreatingModeCommand = new RelayCommand(SetCreatingMode, _ => Mode == EditMode.Remove);
+        SetDeletingModeCommand = new RelayCommand(SetDeletingMode, _ => Mode == EditMode.Add);
     }
     
     public MainViewModel() { }
@@ -76,7 +91,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
             TextAlignment = TextAlignment.Center,
             DataContext = viewModel,
         };
-        box.SetBinding(TextBox.TextProperty, new Binding { Path = new PropertyPath("Text") });
+        box.SetBinding(TextBox.TextProperty, new Binding
+        {
+            Path = new PropertyPath("Text"),
+            Mode = BindingMode.TwoWay,
+            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+        });
         viewModel.Ellipse = ellipse;
         viewModel.Box = box;
 
@@ -131,6 +151,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
                 edgeViewModel.Vertex1 = VertexViewModels[VertexViewModels.IndexOf(SelectedVertex1!)];
                 edgeViewModel.Vertex2 = VertexViewModels[VertexViewModels.IndexOf(SelectedVertex2!)];
+                edgeViewModel.Line = edge;
 
                 edge.SetBinding(Line.X1Property,
                     new Binding
@@ -175,12 +196,61 @@ public sealed class MainViewModel : INotifyPropertyChanged
     
     private void UIElement_OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
-        _dragObject = sender as Ellipse
-                      ?? throw new ArgumentException("");
-        _offset = e.GetPosition(_window.CanvasMain);
-        _offset.X -= Canvas.GetLeft(_dragObject) - 10;
-        _offset.Y -= Canvas.GetTop(_dragObject);
-        _window.CanvasMain.CaptureMouse();
+        if (Mode == EditMode.Add)
+        {
+            _dragObject = sender as Ellipse
+                          ?? throw new ArgumentException("");
+            _offset = e.GetPosition(_window.CanvasMain);
+            _offset.X -= Canvas.GetLeft(_dragObject) - 10;
+            _offset.Y -= Canvas.GetTop(_dragObject);
+            _window.CanvasMain.CaptureMouse();
+        }
+        else
+        {
+            switch (sender)
+            {
+                case Ellipse ellipse:
+                {
+                    var vertex = VertexViewModels.First(vertex => vertex.Ellipse.Equals(ellipse));
+                    _window.CanvasMain.Children.Remove(vertex.Ellipse);
+                    _window.CanvasMain.Children.Remove(vertex.Box);
+                    var edges = vertex.Edges.Select(tuple => tuple.Item1).ToList();
+
+                    foreach (var edge in edges)
+                    {
+                        if (edge is CircleEdgeViewModel circleEdge)
+                        {
+                            _window.CanvasMain.Children.Remove(circleEdge.Ellipse);
+                        }
+                    
+                        _window.CanvasMain.Children.Remove(edge.Line);
+                    }
+
+                    foreach (var vertexViewModel in VertexViewModels)
+                    {
+                        vertexViewModel.Edges =
+                            vertexViewModel.Edges.Where(tuple => !edges.Contains(tuple.Item1)).ToList();
+                    }
+
+                    VertexViewModels.Remove(vertex);
+                    break;
+                }
+                case Line line:
+                {
+                    _window.CanvasMain.Children.Remove(line);
+                    foreach (var vertexViewModel in VertexViewModels)
+                    {
+                        vertexViewModel.Edges = vertexViewModel.Edges
+                            .Where(tuple => !tuple.Item1.Line.Equals(line))
+                            .ToList();
+                    }
+                    break;
+                }
+            }
+            
+            _dragObject = null;
+            _window.CanvasMain.ReleaseMouseCapture();
+        }
     }
     
     public void CanvasMain_OnPreviewMouseMove(object sender, MouseEventArgs e)
@@ -200,4 +270,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _dragObject = null;
         _window.CanvasMain.ReleaseMouseCapture();
     }
+
+    private void SetCreatingMode(object? o) 
+        => Mode = EditMode.Add;
+
+    private void SetDeletingMode(object? o)
+        => Mode = EditMode.Remove;
+}
+
+public enum EditMode
+{
+    Add,
+    Remove
 }

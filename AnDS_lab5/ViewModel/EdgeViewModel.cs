@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Shapes;
 
 // ReSharper disable ValueParameterNotUsed
 
@@ -9,6 +10,8 @@ public class EdgeViewModel : INotifyPropertyChanged
 {
     private VertexViewModel _vertex1 = null!;
     private VertexViewModel _vertex2 = null!;
+
+    public Line Line { get; set; } = null!;
 
     public VertexViewModel Vertex1
     {
@@ -56,7 +59,7 @@ public class EdgeViewModel : INotifyPropertyChanged
     
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

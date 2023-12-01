@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:AnDS_lab5"
         xmlns:viewModel="clr-namespace:AnDS_lab5.ViewModel"
         mc:Ignorable="d"
         Title="MainWindow" Height="537" Width="810">
@@ -81,11 +80,13 @@
                 <Button
                     Height="30"
                     Margin="0 0 0 5"
-                    Content="Режим добавления"/>
+                    Content="Режим добавления"
+                    Command="{Binding SetCreatingModeCommand}"/>
                 <Button
                     Height="30"
                     Margin="0 5 0 10"
-                    Content="Режим удаления"/>
+                    Content="Режим удаления"
+                    Command="{Binding SetDeletingModeCommand}"/>
             </StackPanel>
         </Border>
     </Grid>
