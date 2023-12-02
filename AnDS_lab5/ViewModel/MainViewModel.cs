@@ -7,6 +7,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using AnDS_lab5.Model;
 using AnDS_lab5.Service;
 using AnDS_lab5.View;
 
@@ -305,7 +306,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             var edges = (from vertexViewModel in VertexViewModels
                 from tuple
                     in vertexViewModel.Edges
-                select tuple.Item1.ToEdge()).Distinct().ToList();
+                select tuple.Item1.ToEdge()).Distinct(new EdgeComparer()).ToList();
             _fileService.Save($"{_dialogService.FilePath}\\{Filename}.json", edges);
             _dialogService.ShowMessage("Сохранено в файл!");
         }
