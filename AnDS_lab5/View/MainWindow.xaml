@@ -29,9 +29,8 @@
             <MenuItem
                 Header="Файл">
                 <MenuItem
-                    Header="Сохранить"/>
-                <MenuItem
-                    Header="Сохранить как"/>
+                    Header="Сохранить"
+                    Command="{Binding SaveToFileCommand}"/>
                 <MenuItem
                     Header="Загрузить"/>
             </MenuItem>
@@ -64,7 +63,7 @@
                     Name="ComboBoxes"
                     Visibility="Hidden"
                     Height="25"
-                    Margin="0 0 0 280"
+                    Margin="0 0 0 240"
                     Orientation="Horizontal">
                     <ComboBox
                         Width="75"
@@ -77,9 +76,13 @@
                         ItemsSource="{Binding VertexViewModels}"
                         SelectedItem="{Binding SelectedVertex2}"/>
                 </StackPanel>
-                <Button
+                <TextBox
                     Height="30"
                     Margin="0 0 0 5"
+                    Text="{Binding Filename, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button
+                    Height="30"
+                    Margin="0 5 0 5"
                     Content="Режим добавления"
                     Command="{Binding SetCreatingModeCommand}"/>
                 <Button

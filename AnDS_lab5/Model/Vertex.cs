@@ -3,6 +3,6 @@
 public record Vertex(string Content)
 {
     public string Content { get; set; } = Content;
-    public int X { get; set; }
-    public int Y { get; set; }
+    public double X { get; set; }
+    public double Y { get; set; }
 }

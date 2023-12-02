@@ -2,6 +2,8 @@
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using System.Windows.Shapes;
+using AnDS_lab5.Model;
+
 // ReSharper disable NonReadonlyMemberInGetHashCode
 
 namespace AnDS_lab5.ViewModel;
@@ -139,5 +141,14 @@ public sealed class VertexViewModel : INotifyPropertyChanged
     public override int GetHashCode()
     {
         return HashCode.Combine(_text, _x, _y, _box, _ellipse);
+    }
+
+    public Vertex ToVertex()
+    {
+        return new Vertex(Text)
+        {
+            X = X,
+            Y = Y
+        };
     }
 }

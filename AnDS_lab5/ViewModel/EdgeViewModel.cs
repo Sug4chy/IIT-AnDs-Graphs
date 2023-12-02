@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Shapes;
+using AnDS_lab5.Model;
 
 // ReSharper disable ValueParameterNotUsed
 
@@ -63,4 +64,8 @@ public class EdgeViewModel : INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    public virtual Edge ToEdge() 
+        => new(_vertex1.ToVertex(), _vertex2.ToVertex(), 0);
+    
 }

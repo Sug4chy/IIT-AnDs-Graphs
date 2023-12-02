@@ -2,6 +2,7 @@
 
 using System.Windows.Controls;
 using System.Windows.Shapes;
+using AnDS_lab5.Model;
 
 namespace AnDS_lab5.ViewModel;
 
@@ -42,4 +43,7 @@ public class CircleEdgeViewModel : EdgeViewModel
         get => _vertex.Y - 20d;
         set => Canvas.SetTop(_ellipse, Y);
     }
+
+    public override Edge ToEdge()
+        => new(_vertex.ToVertex(), _vertex.ToVertex(), 0);
 }

@@ -7,6 +7,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using AnDS_lab5.Service;
 using AnDS_lab5.View;
 
 namespace AnDS_lab5.ViewModel;
@@ -21,9 +22,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _vertexCounter;
     private Ellipse? _dragObject;
     private Point _offset;
+    private readonly JsonFileService _fileService = new();
+    private readonly DefaultDialogService _dialogService = new();
+    private string _filename = "";
     
     public ObservableCollection<VertexViewModel> VertexViewModels { get; } = new();
 
+    public string Filename
+    {
+        get => _filename;
+        set
+        {
+            _filename = value;
+            OnPropertyChanged();
+        }
+    }
+    
     public VertexViewModel? SelectedVertex1
     {
         get => _selectedVertex1;
@@ -58,6 +72,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand AddEdgeCommand { get; } = null!;
     public ICommand SetCreatingModeCommand { get; } = null!;
     public ICommand SetDeletingModeCommand { get; } = null!;
+    public ICommand SaveToFileCommand { get; } = null!;
 
     public MainViewModel(MainWindow window)
     {
@@ -66,6 +81,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         AddEdgeCommand = new RelayCommand(AddEdge, _ => Mode == EditMode.Add);
         SetCreatingModeCommand = new RelayCommand(SetCreatingMode, _ => Mode == EditMode.Remove);
         SetDeletingModeCommand = new RelayCommand(SetDeletingMode, _ => Mode == EditMode.Add);
+        SaveToFileCommand = new RelayCommand(SaveToFile);
     }
     
     public MainViewModel() { }
@@ -276,6 +292,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void SetDeletingMode(object? o)
         => Mode = EditMode.Remove;
+
+    private void SaveToFile(object? o)
+    {
+        try
+        {
+            if (!_dialogService.SaveFileDialog())
+            {
+                return;
+            }
+
+            var edges = (from vertexViewModel in VertexViewModels
+                from tuple
+                    in vertexViewModel.Edges
+                select tuple.Item1.ToEdge()).Distinct().ToList();
+            _fileService.Save($"{_dialogService.FilePath}\\{Filename}.json", edges);
+            _dialogService.ShowMessage("Сохранено в файл!");
+        }
+        catch (Exception ex)
+        {
+            _dialogService.ShowMessage(ex.Message);
+        }
+    }
 }
 
 public enum EditMode
