@@ -197,12 +197,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     Stroke = Brushes.Black,
                     DataContext = edgeViewModel
                 };
+                var box = new TextBox
+                {
+                    Height = 20,
+                    Width = 50,
+                    TextAlignment = TextAlignment.Center,
+                    DataContext = edgeViewModel,
+                };
 
                 edgeViewModel.Vertex = VertexViewModels[VertexViewModels.IndexOf(SelectedVertex1!)];
                 edgeViewModel.Ellipse = edge;
+                edgeViewModel.Box = box;
+
+                box.SetBinding(TextBox.TextProperty,
+                    new Binding
+                    {
+                        Path = new PropertyPath("Weight"), Mode = BindingMode.TwoWay,
+                        UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+                    });
 
                 Panel.SetZIndex(edge, 0);
                 _window.CanvasMain.Children.Add(edge);
+                _window.CanvasMain.Children.Add(box);
             }
             else
             {
@@ -212,10 +228,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     Stroke = Brushes.Black,
                     DataContext = edgeViewModel
                 };
+                var box = new TextBox
+                {
+                    Height = 20,
+                    Width = 50,
+                    TextAlignment = TextAlignment.Center,
+                    DataContext = edgeViewModel,
+                };
 
                 edgeViewModel.Vertex1 = VertexViewModels[VertexViewModels.IndexOf(SelectedVertex1!)];
                 edgeViewModel.Vertex2 = VertexViewModels[VertexViewModels.IndexOf(SelectedVertex2!)];
                 edgeViewModel.Line = edge;
+                edgeViewModel.Box = box;
 
                 edge.SetBinding(Line.X1Property,
                     new Binding
@@ -238,9 +262,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     Path = new PropertyPath("Y2"), Mode = BindingMode.TwoWay,
                     UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                 });
+                box.SetBinding(TextBox.TextProperty,
+                    new Binding
+                    {
+                        Path = new PropertyPath("Weight"), Mode = BindingMode.TwoWay,
+                        UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+                    });
 
                 Panel.SetZIndex(edge, 0);
                 _window.CanvasMain.Children.Add(edge);
+                _window.CanvasMain.Children.Add(box);
             }
 
             _window.ComboBoxes.Visibility = Visibility.Hidden;
@@ -288,6 +319,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                         }
 
                         _window.CanvasMain.Children.Remove(edge.Line);
+                        _window.CanvasMain.Children.Remove(edge.Box);
                     }
 
                     foreach (var vertexViewModel in VertexViewModels)
@@ -302,6 +334,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 case Line line:
                 {
                     _window.CanvasMain.Children.Remove(line);
+                    foreach (object? obj in _window.CanvasMain.Children)
+                    {
+                        if (obj is not TextBox box)
+                        {
+                            continue;
+                        }
+                        
+                        if (Math.Abs(Canvas.GetLeft(box) - (line.X1 + line.X2) / 2) < 0.0000001
+                            && Math.Abs(Canvas.GetTop(box) - (line.Y1 + line.Y2) / 2) < 0.0000001)
+                        {
+                            _window.CanvasMain.Children.Remove(box);
+                        }
+                    }
                     foreach (var vertexViewModel in VertexViewModels)
                     {
                         vertexViewModel.Edges = vertexViewModel.Edges
@@ -318,7 +363,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private void CreateEdgeViewModel()
+    private void CreateEdgeViewModel(int weight)
     {
         if (SelectedVertex1!.Equals(SelectedVertex2!))
         {
@@ -331,12 +376,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Stroke = Brushes.Black,
                 DataContext = edgeViewModel
             };
-
+            var box = new TextBox
+            {
+                Height = 20,
+                Width = 50,
+                TextAlignment = TextAlignment.Center,
+                DataContext = edgeViewModel
+            };
             edgeViewModel.Vertex = VertexViewModels[VertexViewModels.IndexOf(SelectedVertex1!)];
             edgeViewModel.Ellipse = edge;
+            edgeViewModel.Box = box;
+            edgeViewModel.Weight = weight;
+
+            box.SetBinding(TextBox.TextProperty,
+                new Binding
+                {
+                    Path = new PropertyPath("Weight"), Mode = BindingMode.TwoWay,
+                    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+                });
 
             Panel.SetZIndex(edge, 0);
             _window.CanvasMain.Children.Add(edge);
+            _window.CanvasMain.Children.Add(box);
         }
         else
         {
@@ -346,10 +407,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Stroke = Brushes.Black,
                 DataContext = edgeViewModel
             };
+            var box = new TextBox
+            {
+                Height = 20,
+                Width = 50,
+                TextAlignment = TextAlignment.Center,
+                DataContext = edgeViewModel
+            };
 
             edgeViewModel.Vertex1 = VertexViewModels[VertexViewModels.IndexOf(SelectedVertex1!)];
             edgeViewModel.Vertex2 = VertexViewModels[VertexViewModels.IndexOf(SelectedVertex2!)];
             edgeViewModel.Line = edge;
+            edgeViewModel.Box = box;
+            edgeViewModel.Weight = weight;
 
             edge.SetBinding(Line.X1Property,
                 new Binding
@@ -372,9 +442,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Path = new PropertyPath("Y2"), Mode = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
             });
+            box.SetBinding(TextBox.TextProperty,
+                new Binding
+                {
+                    Path = new PropertyPath("Weight"), Mode = BindingMode.TwoWay,
+                    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+                });
 
             Panel.SetZIndex(edge, 0);
             _window.CanvasMain.Children.Add(edge);
+            _window.CanvasMain.Children.Add(box);
         }
     }
 
@@ -454,7 +531,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             {
                 SelectedVertex1 = VertexViewModels.First(v => v.Text == edge.VertexA.Content);
                 SelectedVertex2 = VertexViewModels.First(v => v.Text == edge.VertexB.Content);
-                CreateEdgeViewModel();
+                CreateEdgeViewModel(edge.Weight);
             }
 
             SelectedVertex1 = null;

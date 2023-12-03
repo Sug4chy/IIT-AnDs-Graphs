@@ -10,6 +10,7 @@ public class CircleEdgeViewModel : EdgeViewModel
 {
     private VertexViewModel _vertex = null!;
     private Ellipse _ellipse = null!;
+    private TextBox _box = null!;
 
     public Ellipse Ellipse
     {
@@ -21,7 +22,18 @@ public class CircleEdgeViewModel : EdgeViewModel
             Canvas.SetTop(Ellipse, Y);
         }
     }
-    
+
+    public override TextBox Box
+    {
+        get => _box;
+        set
+        {
+            _box = value;
+            Canvas.SetTop(Box, Y - 20d);
+            Canvas.SetLeft(Box, X - 20d);
+        }
+    }
+
     public VertexViewModel Vertex
     {
         get => _vertex;
@@ -35,15 +47,23 @@ public class CircleEdgeViewModel : EdgeViewModel
     public double X
     {
         get => _vertex.X - 20d;
-        set => Canvas.SetLeft(_ellipse, X);
+        set
+        {
+            Canvas.SetLeft(Ellipse, X); 
+            Canvas.SetLeft(Box, X - 10d);
+        }
     }
 
     public double Y
     {
         get => _vertex.Y - 20d;
-        set => Canvas.SetTop(_ellipse, Y);
+        set
+        {
+            Canvas.SetTop(Ellipse, Y);
+            Canvas.SetTop(Box, Y - 10d);
+        }
     }
 
     public override Edge ToEdge()
-        => new(_vertex.ToVertex(), _vertex.ToVertex(), 0);
+        => new(_vertex.ToVertex(), _vertex.ToVertex(), Weight);
 }

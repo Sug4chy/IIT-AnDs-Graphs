@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Controls;
 using System.Windows.Shapes;
 using AnDS_lab5.Model;
 
@@ -11,9 +12,33 @@ public class EdgeViewModel : INotifyPropertyChanged
 {
     private VertexViewModel _vertex1 = null!;
     private VertexViewModel _vertex2 = null!;
+    private TextBox _box = null!;
+    private int _weight;
 
     public Line Line { get; set; } = null!;
 
+    public int Weight
+    {
+        get => _weight;
+        set
+        {
+            _weight = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    public virtual TextBox Box
+    {
+        get => _box;
+        set
+        {
+            _box = value;
+            Panel.SetZIndex(Box, 1);
+            Canvas.SetTop(Box, (Y1 + Y2) / 2 - 20d);
+            Canvas.SetLeft(Box, (X1 + X2) / 2 - 20d);
+        }
+    }
+    
     public VertexViewModel Vertex1
     {
         get => _vertex1;
@@ -37,25 +62,41 @@ public class EdgeViewModel : INotifyPropertyChanged
     public double X1
     {
         get => Vertex1.X + 25d;
-        set => OnPropertyChanged();
+        set
+        {
+            Canvas.SetLeft(Box, (X1 + X2) / 2 - 20d);
+            OnPropertyChanged(); 
+        }
     }
 
     public double X2
     {
         get => Vertex2.X + 25d;
-        set => OnPropertyChanged();
+        set
+        {
+            Canvas.SetLeft(Box, (X1 + X2) / 2 - 20d);
+            OnPropertyChanged();
+        }
     }
 
     public double Y1
     {
         get => Vertex1.Y + 15d;
-        set => OnPropertyChanged();
+        set
+        {
+            Canvas.SetTop(Box, (Y1 + Y2) / 2 - 20d);
+            OnPropertyChanged();
+        }
     }
 
     public double Y2
     {
         get => Vertex2.Y + 15d;
-        set => OnPropertyChanged();
+        set
+        {
+            Canvas.SetTop(Box, (Y1 + Y2) / 2 - 20d);
+            OnPropertyChanged();
+        }
     }
     
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -66,6 +107,6 @@ public class EdgeViewModel : INotifyPropertyChanged
     }
 
     public virtual Edge ToEdge() 
-        => new(_vertex1.ToVertex(), _vertex2.ToVertex(), 0);
+        => new(_vertex1.ToVertex(), _vertex2.ToVertex(), _weight);
     
 }
