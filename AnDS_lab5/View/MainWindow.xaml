@@ -35,6 +35,12 @@
                     Header="Загрузить"
                     Command="{Binding OpenFromFileCommand}"/>
             </MenuItem>
+            <MenuItem
+                Header="Алгоритмы">
+                <MenuItem
+                    Header="Обход в глубину (DFS)"
+                    Command="{Binding StartDfsCommand}"/>
+            </MenuItem>
         </Menu>
         <Canvas
             Grid.Row="1"

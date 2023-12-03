@@ -23,3 +23,5 @@ C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\AnDS_
 C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\MainWindow.g.cs
 C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\MainWindow.baml
 C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\AnDS_lab5.sourcelink.json
+C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\VertexChooseWindow.g.cs
+C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\VertexChooseWindow.baml

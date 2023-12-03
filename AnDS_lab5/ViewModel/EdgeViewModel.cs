@@ -17,6 +17,16 @@ public class EdgeViewModel : INotifyPropertyChanged
 
     public Line Line { get; set; } = null!;
 
+    public double Thickness
+    {
+        get => Line.StrokeThickness;
+        set
+        {
+            Line.StrokeThickness = value;
+            OnPropertyChanged();
+        }
+    }
+
     public int Weight
     {
         get => _weight;

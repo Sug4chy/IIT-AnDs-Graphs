@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Shapes;
 using AnDS_lab5.Model;
 
@@ -15,8 +16,19 @@ public sealed class VertexViewModel : INotifyPropertyChanged
     private double _y;
     private TextBox _box = null!;
     private Ellipse _ellipse = null!;
+    private SolidColorBrush _color = Brushes.Aqua;
 
     public List<(EdgeViewModel, int)> Edges { get; set; } = new();
+
+    public SolidColorBrush Color
+    {
+        get => _color;
+        set
+        {
+            _color = value;
+            OnPropertyChanged();
+        }
+    }
 
     public TextBox Box
     {

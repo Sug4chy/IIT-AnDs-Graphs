@@ -7,6 +7,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using AnDS_lab5.Algorithms;
 using AnDS_lab5.Model;
 using AnDS_lab5.Service;
 using AnDS_lab5.View;
@@ -26,6 +27,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly JsonFileService _fileService = new();
     private readonly DefaultDialogService _dialogService = new();
     private string _filename = "";
+    private readonly List<EdgeViewModel> _edgeViewModels = new();
 
     public ObservableCollection<VertexViewModel> VertexViewModels { get; } = new();
 
@@ -75,6 +77,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand SetDeletingModeCommand { get; } = null!;
     public ICommand SaveToFileCommand { get; } = null!;
     public ICommand OpenFromFileCommand { get; } = null!;
+    public ICommand StartDfsCommand { get; } = null!;
 
     public MainViewModel(MainWindow window)
     {
@@ -85,10 +88,103 @@ public sealed class MainViewModel : INotifyPropertyChanged
         SetDeletingModeCommand = new RelayCommand(SetDeletingMode, _ => Mode == EditMode.Add);
         SaveToFileCommand = new RelayCommand(SaveToFile);
         OpenFromFileCommand = new RelayCommand(OpenFromFile);
+        StartDfsCommand = new RelayCommand(StartDfs);
     }
 
-    public MainViewModel()
+    public MainViewModel() { }
+    
+    private void UIElement_OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (Mode == EditMode.Add)
+        {
+            _dragObject = sender as Ellipse
+                          ?? throw new ArgumentException("");
+            _offset = e.GetPosition(_window.CanvasMain);
+            _offset.X -= Canvas.GetLeft(_dragObject) - 10;
+            _offset.Y -= Canvas.GetTop(_dragObject);
+            _window.CanvasMain.CaptureMouse();
+        }
+        else
+        {
+            switch (sender)
+            {
+                case Ellipse ellipse:
+                {
+                    var vertex = VertexViewModels.First(vertex => vertex.Ellipse.Equals(ellipse));
+                    _window.CanvasMain.Children.Remove(vertex.Ellipse);
+                    _window.CanvasMain.Children.Remove(vertex.Box);
+                    var edges = vertex.Edges.Select(tuple => tuple.Item1).ToList();
+
+                    foreach (var edge in edges)
+                    {
+                        if (edge is CircleEdgeViewModel circleEdge)
+                        {
+                            _window.CanvasMain.Children.Remove(circleEdge.Ellipse);
+                        }
+
+                        _window.CanvasMain.Children.Remove(edge.Line);
+                        _window.CanvasMain.Children.Remove(edge.Box);
+                    }
+
+                    foreach (var vertexViewModel in VertexViewModels)
+                    {
+                        vertexViewModel.Edges =
+                            vertexViewModel.Edges.Where(tuple => !edges.Contains(tuple.Item1)).ToList();
+                    }
+
+                    VertexViewModels.Remove(vertex);
+                    break;
+                }
+                case Line line:
+                {
+                    var edge = _edgeViewModels.First(edge => edge.Line.Equals(line));
+                    _edgeViewModels.Remove(edge);
+                    _window.CanvasMain.Children.Remove(line);
+                    foreach (object? obj in _window.CanvasMain.Children)
+                    {
+                        if (obj is not TextBox box)
+                        {
+                            continue;
+                        }
+                        
+                        if (Math.Abs(Canvas.GetLeft(box) - (line.X1 + line.X2) / 2) < 0.0000001
+                            && Math.Abs(Canvas.GetTop(box) - (line.Y1 + line.Y2) / 2) < 0.0000001)
+                        {
+                            _window.CanvasMain.Children.Remove(box);
+                        }
+                    }
+                    foreach (var vertexViewModel in VertexViewModels)
+                    {
+                        vertexViewModel.Edges = vertexViewModel.Edges
+                            .Where(tuple => !tuple.Item1.Line.Equals(line))
+                            .ToList();
+                    }
+
+                    break;
+                }
+            }
+
+            _dragObject = null;
+            _window.CanvasMain.ReleaseMouseCapture();
+        }
+    }
+
+    public void CanvasMain_OnPreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_dragObject is null)
+        {
+            return;
+        }
+
+        var position = e.GetPosition(sender as IInputElement);
+        (_dragObject.DataContext as VertexViewModel)!.Y = position.Y - _offset.Y;
+        (_dragObject.DataContext as VertexViewModel)!.X = position.X - _offset.X;
+    }
+
+    public void CanvasMain_OnPreviewMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        _dragObject = null;
+        _window.CanvasMain.ReleaseMouseCapture();
     }
 
     private void AddVertex(object? o)
@@ -117,6 +213,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Path = new PropertyPath("Text"),
             Mode = BindingMode.TwoWay,
             UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+        });
+        ellipse.SetBinding(Shape.FillProperty, new Binding
+        {
+            Path = new PropertyPath("Color"),
+            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+            Converter = new BrushConverter()
         });
         viewModel.Ellipse = ellipse;
         viewModel.Box = box;
@@ -161,6 +263,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Mode = BindingMode.TwoWay,
             UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
         });
+        ellipse.SetBinding(Shape.FillProperty, new Binding
+        {
+            Path = new PropertyPath("Color"),
+            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+            Converter = new BrushConverter()
+        });
+        
         viewModel.Ellipse = ellipse;
         viewModel.Box = box;
 
@@ -216,6 +325,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                         UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                     });
 
+                _edgeViewModels.Add(edgeViewModel);
+                
                 Panel.SetZIndex(edge, 0);
                 _window.CanvasMain.Children.Add(edge);
                 _window.CanvasMain.Children.Add(box);
@@ -269,6 +380,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                         UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                     });
 
+                _edgeViewModels.Add(edgeViewModel);
+                
                 Panel.SetZIndex(edge, 0);
                 _window.CanvasMain.Children.Add(edge);
                 _window.CanvasMain.Children.Add(box);
@@ -281,88 +394,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             SelectedVertex2 = null;
         }
     }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    private void UIElement_OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        if (Mode == EditMode.Add)
-        {
-            _dragObject = sender as Ellipse
-                          ?? throw new ArgumentException("");
-            _offset = e.GetPosition(_window.CanvasMain);
-            _offset.X -= Canvas.GetLeft(_dragObject) - 10;
-            _offset.Y -= Canvas.GetTop(_dragObject);
-            _window.CanvasMain.CaptureMouse();
-        }
-        else
-        {
-            switch (sender)
-            {
-                case Ellipse ellipse:
-                {
-                    var vertex = VertexViewModels.First(vertex => vertex.Ellipse.Equals(ellipse));
-                    _window.CanvasMain.Children.Remove(vertex.Ellipse);
-                    _window.CanvasMain.Children.Remove(vertex.Box);
-                    var edges = vertex.Edges.Select(tuple => tuple.Item1).ToList();
-
-                    foreach (var edge in edges)
-                    {
-                        if (edge is CircleEdgeViewModel circleEdge)
-                        {
-                            _window.CanvasMain.Children.Remove(circleEdge.Ellipse);
-                        }
-
-                        _window.CanvasMain.Children.Remove(edge.Line);
-                        _window.CanvasMain.Children.Remove(edge.Box);
-                    }
-
-                    foreach (var vertexViewModel in VertexViewModels)
-                    {
-                        vertexViewModel.Edges =
-                            vertexViewModel.Edges.Where(tuple => !edges.Contains(tuple.Item1)).ToList();
-                    }
-
-                    VertexViewModels.Remove(vertex);
-                    break;
-                }
-                case Line line:
-                {
-                    _window.CanvasMain.Children.Remove(line);
-                    foreach (object? obj in _window.CanvasMain.Children)
-                    {
-                        if (obj is not TextBox box)
-                        {
-                            continue;
-                        }
-                        
-                        if (Math.Abs(Canvas.GetLeft(box) - (line.X1 + line.X2) / 2) < 0.0000001
-                            && Math.Abs(Canvas.GetTop(box) - (line.Y1 + line.Y2) / 2) < 0.0000001)
-                        {
-                            _window.CanvasMain.Children.Remove(box);
-                        }
-                    }
-                    foreach (var vertexViewModel in VertexViewModels)
-                    {
-                        vertexViewModel.Edges = vertexViewModel.Edges
-                            .Where(tuple => !tuple.Item1.Line.Equals(line))
-                            .ToList();
-                    }
-
-                    break;
-                }
-            }
-
-            _dragObject = null;
-            _window.CanvasMain.ReleaseMouseCapture();
-        }
-    }
-
+    
     private void CreateEdgeViewModel(int weight)
     {
         if (SelectedVertex1!.Equals(SelectedVertex2!))
@@ -395,6 +427,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                 });
 
+            _edgeViewModels.Add(edgeViewModel);
+            
             Panel.SetZIndex(edge, 0);
             _window.CanvasMain.Children.Add(edge);
             _window.CanvasMain.Children.Add(box);
@@ -449,28 +483,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                 });
 
+            _edgeViewModels.Add(edgeViewModel);
+            
             Panel.SetZIndex(edge, 0);
             _window.CanvasMain.Children.Add(edge);
             _window.CanvasMain.Children.Add(box);
         }
-    }
-
-    public void CanvasMain_OnPreviewMouseMove(object sender, MouseEventArgs e)
-    {
-        if (_dragObject is null)
-        {
-            return;
-        }
-
-        var position = e.GetPosition(sender as IInputElement);
-        (_dragObject.DataContext as VertexViewModel)!.Y = position.Y - _offset.Y;
-        (_dragObject.DataContext as VertexViewModel)!.X = position.X - _offset.X;
-    }
-
-    public void CanvasMain_OnPreviewMouseUp(object sender, MouseButtonEventArgs e)
-    {
-        _dragObject = null;
-        _window.CanvasMain.ReleaseMouseCapture();
     }
 
     private void SetCreatingMode(object? o)
@@ -512,6 +530,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             var edges = _fileService.Open(_dialogService.FilePath);
             _window.CanvasMain.Children.Clear();
+            _edgeViewModels.Clear();
             VertexViewModels.Clear();
             _vertexCounter = 0;
             _edgeCounter = 0;
@@ -543,6 +562,78 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             _dialogService.ShowMessage(ex.Message);
         }
+    }
+
+    private void StartDfs(object? o)
+    {
+        var vertexChooseWindow = new VertexChooseWindow(VertexViewModels);
+        string content = vertexChooseWindow.ShowDialog() == true 
+            ? vertexChooseWindow.SelectedVertex.Text 
+            : VertexViewModels[0].Text;
+        
+        var edges = _edgeViewModels
+            .Select(GetEdgeVertexes)
+            .ToArray();
+
+        var dfs = new Dfs(_edgeViewModels.Count);
+        foreach (var edge in edges)
+        {
+            dfs.AddEdge(edge.Item1, edge.Item2);
+        }
+
+        var steps = dfs.DfsStart(content);
+        HandleSteps(steps);
+    }
+
+    private static (string, string) GetEdgeVertexes(EdgeViewModel e)
+        => e is CircleEdgeViewModel circleE
+            ? (circleE.Vertex.Text, circleE.Vertex.Text)
+            : (e.Vertex1.Text, e.Vertex2.Text);
+
+    private async void HandleSteps(IEnumerable<DfsStep> steps)
+    {
+        foreach (var step in steps)
+        {
+            if (step.From == "")
+            {
+                var vertex = VertexViewModels.First(v => v.Text == step.To);
+                vertex.Color = Brushes.Red;
+            }
+            else
+            {
+                var vertex = VertexViewModels.First(v => v.Text == step.To);
+                vertex.Color = Brushes.Red;
+                var edge = _edgeViewModels.First(e => 
+                    (e.Vertex1.Text == step.From && e.Vertex2.Text == step.To) 
+                    || (e.Vertex1.Text == step.To && e.Vertex2.Text == step.From));
+                edge.Thickness = 2.5;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+        
+        MessageBox.Show("Обход окончен!");
+        ResetGraphState();
+    }
+
+    private void ResetGraphState()
+    {
+        foreach (var v in VertexViewModels)
+        {
+            v.Color = Brushes.Aqua;
+        }
+
+        foreach (var e in _edgeViewModels)
+        {
+            e.Thickness = 1d;
+        }
+    }
+    
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
 
