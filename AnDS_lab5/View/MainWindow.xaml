@@ -32,7 +32,8 @@
                     Header="Сохранить"
                     Command="{Binding SaveToFileCommand}"/>
                 <MenuItem
-                    Header="Загрузить"/>
+                    Header="Загрузить"
+                    Command="{Binding OpenFromFileCommand}"/>
             </MenuItem>
         </Menu>
         <Canvas

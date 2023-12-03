@@ -1,18 +1,15 @@
-﻿namespace AnDS_lab5.Model;
+﻿using AnDS_lab5.ViewModel;
 
-public record Vertex(string Content)
+namespace AnDS_lab5.Model;
+
+public readonly struct Vertex()
 {
-    public string Content { get; } = Content;
-    public double X { get; init; }
-    public double Y { get; init; }
+    public string Content { get; init; } = null!;
+    public double X { get; init; } = 0;
+    public double Y { get; init; } = 0;
 
-#pragma warning disable CS8851 // Record defines 'Equals' but not 'GetHashCode'.
-    public virtual bool Equals(Vertex? other)
-#pragma warning restore CS8851 // Record defines 'Equals' but not 'GetHashCode'.
-    {
-        return other is not null 
-               && Content.Equals(other.Content) 
-               && Math.Abs(X - other.X) < 0.000001 
-               && Math.Abs(Y - other.Y) < 0.000001;
-    }
+    public bool Equals(Vertex other) 
+        => Content.Equals(other.Content) 
+           && Math.Abs(X - other.X) < 0.000001 
+           && Math.Abs(Y - other.Y) < 0.000001;
 }

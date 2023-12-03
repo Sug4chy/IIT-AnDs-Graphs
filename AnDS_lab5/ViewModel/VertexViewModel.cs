@@ -145,10 +145,11 @@ public sealed class VertexViewModel : INotifyPropertyChanged
 
     public Vertex ToVertex()
     {
-        return new Vertex(Text)
+        return new Vertex
         {
             X = X,
-            Y = Y
+            Y = Y,
+            Content = Text
         };
     }
 }
