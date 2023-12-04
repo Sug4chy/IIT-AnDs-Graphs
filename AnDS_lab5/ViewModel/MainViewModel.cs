@@ -592,15 +592,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async void HandleSteps(IEnumerable<DfsStep> steps)
     {
+        var stepsString = new ObservableCollection<string>();
+        var stepsWindow = new StepsWindow(stepsString);
+        stepsWindow.Show();
         foreach (var step in steps)
         {
             if (step.From == "")
             {
+                stepsString.Add($"Начинаем обход с вершины {step.To}");
                 var vertex = VertexViewModels.First(v => v.Text == step.To);
                 vertex.Color = Brushes.Red;
             }
+            else if (step.To == "")
+            {
+                stepsString.Add($"Вернулись в вершину {step.From}");
+            }
             else
             {
+                stepsString.Add($"Посещаем вершину {step.To} из вершины {step.From}");
                 var vertex = VertexViewModels.First(v => v.Text == step.To);
                 vertex.Color = Brushes.Red;
                 var edge = _edgeViewModels.First(e => 

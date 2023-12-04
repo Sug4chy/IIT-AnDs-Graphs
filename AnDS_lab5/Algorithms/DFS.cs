@@ -31,6 +31,7 @@ public class Dfs(int v)
         {
             _steps.Add(new DfsStep { From = v, To = neighbor });
             DfsUtil(neighbor, visited);
+            _steps.Add(new DfsStep { From = v, To = "" });
         }
     }
 
