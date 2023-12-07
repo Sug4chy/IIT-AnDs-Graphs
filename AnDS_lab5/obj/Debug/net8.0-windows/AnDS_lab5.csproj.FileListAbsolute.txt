@@ -27,3 +27,5 @@ C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\
 C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\VertexChooseWindow.baml
 C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\StepsWindow.baml
 C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\StepsWindow.g.cs
+C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\OrientedRedactorWindow.g.cs
+C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\OrientedRedactorWindow.baml

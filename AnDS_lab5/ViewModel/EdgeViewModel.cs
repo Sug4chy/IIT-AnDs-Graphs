@@ -15,7 +15,7 @@ public class EdgeViewModel : INotifyPropertyChanged
     private TextBox _box = null!;
     private int _weight;
 
-    public Line Line { get; set; } = null!;
+    public Shape Line { get; set; } = null!;
 
     public double Thickness
     {

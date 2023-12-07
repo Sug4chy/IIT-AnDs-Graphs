@@ -7,17 +7,16 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using AnDS_lab5.Algorithms;
 using AnDS_lab5.Model;
 using AnDS_lab5.Service;
 using AnDS_lab5.View;
 
 namespace AnDS_lab5.ViewModel;
 
-public sealed class MainViewModel : INotifyPropertyChanged
+public sealed class OrientedRedactorViewModel : INotifyPropertyChanged
 {
     private EditMode _mode;
-    private readonly MainWindow _window = null!;
+    private readonly OrientedRedactorWindow _window = null!;
     private VertexViewModel? _selectedVertex1;
     private VertexViewModel? _selectedVertex2;
     private int _edgeCounter;
@@ -77,11 +76,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand SetDeletingModeCommand { get; } = null!;
     public ICommand SaveToFileCommand { get; } = null!;
     public ICommand OpenFromFileCommand { get; } = null!;
-    public ICommand StartDfsCommand { get; } = null!;
-    public ICommand StartBfsCommand { get; } = null!;
-    public ICommand OpenOrientedRedactorCommand { get; } = null!;
 
-    public MainViewModel(MainWindow window)
+    public OrientedRedactorViewModel(OrientedRedactorWindow window)
     {
         _window = window;
         AddVertexCommand = new RelayCommand(AddVertex, _ => Mode == EditMode.Add);
@@ -90,12 +86,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         SetDeletingModeCommand = new RelayCommand(SetDeletingMode, _ => Mode == EditMode.Add);
         SaveToFileCommand = new RelayCommand(SaveToFile);
         OpenFromFileCommand = new RelayCommand(OpenFromFile);
-        StartDfsCommand = new RelayCommand(StartDfs);
-        StartBfsCommand = new RelayCommand(StartBfs);
-        OpenOrientedRedactorCommand = new RelayCommand(OpenOrientedRedactor);
     }
 
-    public MainViewModel() { }
+    public OrientedRedactorViewModel() { }
     
     private void UIElement_OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
@@ -139,7 +132,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     VertexViewModels.Remove(vertex);
                     break;
                 }
-                case Line line:
+                case Arrow line:
                 {
                     var edge = _edgeViewModels.First(edge => edge.Line.Equals(line));
                     _edgeViewModels.Remove(edge);
@@ -338,8 +331,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             else
             {
                 var edgeViewModel = new EdgeViewModel();
-                var edge = new Line
+                var edge = new Arrow
                 {
+                    HeadHeight = 10,
+                    HeadWidth = 10,
                     Stroke = Brushes.Black,
                     DataContext = edgeViewModel
                 };
@@ -356,23 +351,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 edgeViewModel.Line = edge;
                 edgeViewModel.Box = box;
 
-                edge.SetBinding(Line.X1Property,
+                edge.SetBinding(Arrow.X1Property,
                     new Binding
                     {
                         Path = new PropertyPath("X1"), Mode = BindingMode.TwoWay,
                         UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                     });
-                edge.SetBinding(Line.X2Property, new Binding
+                edge.SetBinding(Arrow.X2Property, new Binding
                 {
                     Path = new PropertyPath("X2"), Mode = BindingMode.TwoWay,
                     UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                 });
-                edge.SetBinding(Line.Y1Property, new Binding
+                edge.SetBinding(Arrow.Y1Property, new Binding
                 {
                     Path = new PropertyPath("Y1"), Mode = BindingMode.TwoWay,
                     UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                 });
-                edge.SetBinding(Line.Y2Property, new Binding
+                edge.SetBinding(Arrow.Y2Property, new Binding
                 {
                     Path = new PropertyPath("Y2"), Mode = BindingMode.TwoWay,
                     UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
@@ -440,8 +435,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
         else
         {
             var edgeViewModel = new EdgeViewModel();
-            var edge = new Line
+            var edge = new Arrow
             {
+                HeadHeight = 10,
+                HeadWidth = 10,
                 Stroke = Brushes.Black,
                 DataContext = edgeViewModel
             };
@@ -459,23 +456,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
             edgeViewModel.Box = box;
             edgeViewModel.Weight = weight;
 
-            edge.SetBinding(Line.X1Property,
+            edge.SetBinding(Arrow.X1Property,
                 new Binding
                 {
                     Path = new PropertyPath("X1"), Mode = BindingMode.TwoWay,
                     UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                 });
-            edge.SetBinding(Line.X2Property, new Binding
+            edge.SetBinding(Arrow.X2Property, new Binding
             {
                 Path = new PropertyPath("X2"), Mode = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
             });
-            edge.SetBinding(Line.Y1Property, new Binding
+            edge.SetBinding(Arrow.Y1Property, new Binding
             {
                 Path = new PropertyPath("Y1"), Mode = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
             });
-            edge.SetBinding(Line.Y2Property, new Binding
+            edge.SetBinding(Arrow.Y2Property, new Binding
             {
                 Path = new PropertyPath("Y2"), Mode = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
@@ -567,131 +564,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _dialogService.ShowMessage(ex.Message);
         }
     }
-
-    private void StartDfs(object? o)
-    {
-        var vertexChooseWindow = new VertexChooseWindow(VertexViewModels);
-        string content = vertexChooseWindow.ShowDialog() == true 
-            ? vertexChooseWindow.SelectedVertex.Text 
-            : VertexViewModels[0].Text;
-        
-        var edges = _edgeViewModels
-            .Select(GetEdgeVertexes)
-            .ToArray();
-
-        var dfs = new Dfs(_edgeViewModels.Count);
-        foreach (var edge in edges)
-        {
-            dfs.AddEdge(edge.Item1, edge.Item2);
-        }
-
-        var steps = dfs.DfsStart(content);
-        HandleSteps(steps);
-    }
-
-    private static (string, string) GetEdgeVertexes(EdgeViewModel e)
-        => e is CircleEdgeViewModel circleE
-            ? (circleE.Vertex.Text, circleE.Vertex.Text)
-            : (e.Vertex1.Text, e.Vertex2.Text);
-
-    private async void HandleSteps(IEnumerable<DfsStep> steps)
-    {
-        var stepsString = new ObservableCollection<string>();
-        var stepsWindow = new StepsWindow(stepsString);
-        stepsWindow.Show();
-        foreach (var step in steps)
-        {
-            if (step.From == "")
-            {
-                stepsString.Add($"Начинаем обход с вершины {step.To}");
-                var vertex = VertexViewModels.First(v => v.Text == step.To);
-                vertex.Color = Brushes.Red;
-            }
-            else
-            {
-                stepsString.Add($"Посещаем вершину {step.To} из вершины {step.From}");
-                var vertex = VertexViewModels.First(v => v.Text == step.To);
-                vertex.Color = Brushes.Red;
-                var edge = _edgeViewModels.First(e => 
-                    (e.Vertex1.Text == step.From && e.Vertex2.Text == step.To) 
-                    || (e.Vertex1.Text == step.To && e.Vertex2.Text == step.From));
-                edge.Thickness = 2.5;
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-        
-        MessageBox.Show("Обход окончен!");
-        ResetGraphState();
-    }
-
-    private void ResetGraphState()
-    {
-        foreach (var v in VertexViewModels)
-        {
-            v.Color = Brushes.Aqua;
-        }
-
-        foreach (var e in _edgeViewModels)
-        {
-            e.Thickness = 1d;
-        }
-    }
-
-    private void StartBfs(object? o)
-    {
-        var vertexChooseWindow = new VertexChooseWindow(VertexViewModels);
-        string content = vertexChooseWindow.ShowDialog() == true 
-            ? vertexChooseWindow.SelectedVertex.Text 
-            : VertexViewModels[0].Text;
-        
-        var edges = _edgeViewModels
-            .Select(GetEdgeVertexes)
-            .ToArray();
-
-        var dfs = new Bfs(_edgeViewModels.Count);
-        foreach (var edge in edges)
-        {
-            dfs.AddEdge(edge.Item1, edge.Item2);
-        }
-
-        var steps = dfs.BfsStart(content);
-        HandleSteps(steps);
-    }
-    
-    private async void HandleSteps(IEnumerable<BfsStep> steps)
-    {
-        var stepsString = new ObservableCollection<string>();
-        var stepsWindow = new StepsWindow(stepsString);
-        stepsWindow.Show();
-        foreach (var step in steps)
-        {
-            if (step.From == "")
-            {
-                stepsString.Add($"Начинаем обход с вершины {step.To}");
-                var vertex = VertexViewModels.First(v => v.Text == step.To);
-                vertex.Color = Brushes.Blue;
-            }
-            else
-            {
-                stepsString.Add($"Посещаем вершину {step.To} из вершины {step.From}");
-                var vertex = VertexViewModels.First(v => v.Text == step.To);
-                vertex.Color = Brushes.Blue;
-                var edge = _edgeViewModels.First(e => 
-                    (e.Vertex1.Text == step.From && e.Vertex2.Text == step.To) 
-                    || (e.Vertex1.Text == step.To && e.Vertex2.Text == step.From));
-                edge.Thickness = 2.5;
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-        
-        MessageBox.Show("Обход окончен!");
-        ResetGraphState();
-    }
-
-    private void OpenOrientedRedactor(object? o)
-        => new OrientedRedactorWindow().Show();
     
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -699,10 +571,4 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
-}
-
-public enum EditMode
-{
-    Add,
-    Remove
 }

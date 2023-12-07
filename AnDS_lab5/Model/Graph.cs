@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.IO;
 using System.Text;
 
 namespace AnDS_lab5.Model;
@@ -47,13 +46,5 @@ public class Graph : IEnumerable<Edge>
         }
 
         return sb.ToString();
-    }
-
-    public void Sort()
-        => _edges.Sort();
-
-    public void SaveToFile(string fileName)
-    {
-        File.WriteAllLines($"../../../{fileName}.graph", ToString().Split('\n'));
     }
 }

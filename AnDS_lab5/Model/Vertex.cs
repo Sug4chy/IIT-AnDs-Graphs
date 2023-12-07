@@ -1,6 +1,4 @@
-﻿using AnDS_lab5.ViewModel;
-
-namespace AnDS_lab5.Model;
+﻿namespace AnDS_lab5.Model;
 
 public readonly struct Vertex()
 {
