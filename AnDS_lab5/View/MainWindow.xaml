@@ -40,6 +40,9 @@
                 <MenuItem
                     Header="Обход в глубину (DFS)"
                     Command="{Binding StartDfsCommand}"/>
+                <MenuItem
+                    Header="Обход в ширину (BFS)"
+                    Command="{Binding StartBfsCommand}"/>
             </MenuItem>
         </Menu>
         <Canvas

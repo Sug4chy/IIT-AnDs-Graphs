@@ -78,6 +78,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand SaveToFileCommand { get; } = null!;
     public ICommand OpenFromFileCommand { get; } = null!;
     public ICommand StartDfsCommand { get; } = null!;
+    public ICommand StartBfsCommand { get; } = null!;
 
     public MainViewModel(MainWindow window)
     {
@@ -89,6 +90,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         SaveToFileCommand = new RelayCommand(SaveToFile);
         OpenFromFileCommand = new RelayCommand(OpenFromFile);
         StartDfsCommand = new RelayCommand(StartDfs);
+        StartBfsCommand = new RelayCommand(StartBfs);
     }
 
     public MainViewModel() { }
@@ -603,10 +605,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 var vertex = VertexViewModels.First(v => v.Text == step.To);
                 vertex.Color = Brushes.Red;
             }
-            else if (step.To == "")
-            {
-                stepsString.Add($"Вернулись в вершину {step.From}");
-            }
             else
             {
                 stepsString.Add($"Посещаем вершину {step.To} из вершины {step.From}");
@@ -636,6 +634,58 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             e.Thickness = 1d;
         }
+    }
+
+    private void StartBfs(object? o)
+    {
+        var vertexChooseWindow = new VertexChooseWindow(VertexViewModels);
+        string content = vertexChooseWindow.ShowDialog() == true 
+            ? vertexChooseWindow.SelectedVertex.Text 
+            : VertexViewModels[0].Text;
+        
+        var edges = _edgeViewModels
+            .Select(GetEdgeVertexes)
+            .ToArray();
+
+        var dfs = new Bfs(_edgeViewModels.Count);
+        foreach (var edge in edges)
+        {
+            dfs.AddEdge(edge.Item1, edge.Item2);
+        }
+
+        var steps = dfs.BfsStart(content);
+        HandleSteps(steps);
+    }
+    
+    private async void HandleSteps(IEnumerable<BfsStep> steps)
+    {
+        var stepsString = new ObservableCollection<string>();
+        var stepsWindow = new StepsWindow(stepsString);
+        stepsWindow.Show();
+        foreach (var step in steps)
+        {
+            if (step.From == "")
+            {
+                stepsString.Add($"Начинаем обход с вершины {step.To}");
+                var vertex = VertexViewModels.First(v => v.Text == step.To);
+                vertex.Color = Brushes.Blue;
+            }
+            else
+            {
+                stepsString.Add($"Посещаем вершину {step.To} из вершины {step.From}");
+                var vertex = VertexViewModels.First(v => v.Text == step.To);
+                vertex.Color = Brushes.Blue;
+                var edge = _edgeViewModels.First(e => 
+                    (e.Vertex1.Text == step.From && e.Vertex2.Text == step.To) 
+                    || (e.Vertex1.Text == step.To && e.Vertex2.Text == step.From));
+                edge.Thickness = 2.5;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+        
+        MessageBox.Show("Обход окончен!");
+        ResetGraphState();
     }
     
     public event PropertyChangedEventHandler? PropertyChanged;
