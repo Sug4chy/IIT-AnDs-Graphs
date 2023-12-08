@@ -1,39 +1,56 @@
 ﻿namespace AnDS_lab5.Algorithms;
 
-public class FordFulkerson(int verticesCount)
+public class FordFulkerson(int verticesCount, IReadOnlyList<string> verticesNames)
 {
-    private bool Bfs(IReadOnlyList<List<int>> graph, int s, int t, IList<int> p)
+    private readonly List<FordFulkersonStep> _steps = new();
+    
+    private bool Bfs(IReadOnlyList<List<int>> graph, int source, int sink, IList<int> parents)
     {
-        bool[] visited = new bool[verticesCount];
-        for (int i = 0; i < verticesCount; ++i)
+        _steps.Add(new FordFulkersonStep
         {
-            visited[i] = false;
-        }
+            StepType = FordFulkersonStepEnum.StartBfs
+        });
+        bool[] visited = new bool[verticesCount];
 
         var queue = new Queue<int>();
-        queue.Enqueue(s);
-        visited[s] = true;
-        p[s] = -1;
+        queue.Enqueue(source);
+        _steps.Add(new FordFulkersonStep
+        {
+            EnqueueVertexWithIndex = source,
+            StepType = FordFulkersonStepEnum.EnqueueValue
+        });
+        visited[source] = true;
+        parents[source] = -1;
 
         while (queue.Count != 0)
         {
             int u = queue.Dequeue();
             for (int v = 0; v < verticesCount; v++)
             {
-                if (!visited[v] && graph[u][v] > 0)
+                if (visited[v] || graph[u][v] <= 0)
                 {
-                    queue.Enqueue(v);
-                    p[v] = u;
-                    visited[v] = true;
+                    continue;
                 }
+
+                queue.Enqueue(v);
+                _steps.Add(new FordFulkersonStep
+                {
+                    EnqueueVertexWithIndex = v,
+                    StepType = FordFulkersonStepEnum.EnqueueValue
+                });
+                parents[v] = u;
+                visited[v] = true;
             }
         }
 
-        return visited[t];
+        return visited[sink];
     }
     
-    public int StartFordFulkerson(List<int>[] graph, int s, int t)
+    public List<FordFulkersonStep> StartFordFulkerson(
+        List<int>[] graph, int source, int sink)
     {
+        _steps.Clear();
+        
         int u, v;
         var graphCopy = new List<int>[verticesCount];
         for (u = 0; u < verticesCount; u++)
@@ -45,28 +62,62 @@ public class FordFulkerson(int verticesCount)
             }
         }
 
-        int[] p = new int[verticesCount];
+        int[] parents = new int[verticesCount];
         int maxFlow = 0;
 
-        while (Bfs(graphCopy, s, t, p))
+        while (Bfs(graphCopy, source, sink, parents))
         {
-            int pathFlow = int.MaxValue;
-            for (v = t; v != s; v = p[v])
+            var currentPath = new List<string>
             {
-                u = p[v];
+                verticesNames[sink]
+            };
+            int pathFlow = int.MaxValue;
+            for (v = sink; v != source; v = parents[v])
+            {
+                u = parents[v];
+                currentPath.Add(verticesNames[u]);
                 pathFlow = Math.Min(pathFlow, graphCopy[u][v]);
             }
 
-            for (v = t; v != s; v = p[v])
+            _steps.Add(new FordFulkersonStep
             {
-                u = p[v];
+                NewPath = currentPath, 
+                StepType = FordFulkersonStepEnum.FindNewPath
+            });
+            _steps.Add(new FordFulkersonStep
+            {
+                MinFlowInNewPath = pathFlow,
+                StepType = FordFulkersonStepEnum.MinFlowInNewPath
+            });
+
+            for (v = sink; v != source; v = parents[v])
+            {
+                u = parents[v];
                 graphCopy[u][v] -= pathFlow;
                 graphCopy[v][u] += pathFlow;
+                _steps.Add(new FordFulkersonStep
+                {
+                    ReverseEdgeFromIndex = v,
+                    ReverseEdgeToIndex = u,
+                    ReverseEdgeWeight = pathFlow,
+                    StepType = FordFulkersonStepEnum.AddReverseEdge
+                });
             }
 
+            _steps.Add(new FordFulkersonStep
+            {
+                AddToMaxFlowValue = pathFlow,
+                StepType = FordFulkersonStepEnum.AddMinFlowToMaxFlow
+            });
             maxFlow += pathFlow;
         }
 
-        return maxFlow;
+        _steps.Add(new FordFulkersonStep
+        {
+            MaxFlow = maxFlow, 
+            StepType = FordFulkersonStepEnum.MaxFlow
+        });
+
+        return _steps;
     }
 }

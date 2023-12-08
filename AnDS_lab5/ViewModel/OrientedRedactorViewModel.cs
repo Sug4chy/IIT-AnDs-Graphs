@@ -7,6 +7,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using AnDS_lab5.Algorithms;
 using AnDS_lab5.Model;
 using AnDS_lab5.Service;
 using AnDS_lab5.View;
@@ -27,6 +28,8 @@ public sealed class OrientedRedactorViewModel : INotifyPropertyChanged
     private readonly DefaultDialogService _dialogService = new();
     private string _filename = "";
     private readonly List<EdgeViewModel> _edgeViewModels = new();
+    private readonly List<EdgeViewModel> _reverseEdges = new();
+    private SolidColorBrush _color = Brushes.Black;
 
     public ObservableCollection<VertexViewModel> VertexViewModels { get; } = new();
 
@@ -76,6 +79,7 @@ public sealed class OrientedRedactorViewModel : INotifyPropertyChanged
     public ICommand SetDeletingModeCommand { get; } = null!;
     public ICommand SaveToFileCommand { get; } = null!;
     public ICommand OpenFromFileCommand { get; } = null!;
+    public ICommand StartFordFulkersonCommand { get; } = null!;
 
     public OrientedRedactorViewModel(OrientedRedactorWindow window)
     {
@@ -86,6 +90,7 @@ public sealed class OrientedRedactorViewModel : INotifyPropertyChanged
         SetDeletingModeCommand = new RelayCommand(SetDeletingMode, _ => Mode == EditMode.Add);
         SaveToFileCommand = new RelayCommand(SaveToFile);
         OpenFromFileCommand = new RelayCommand(OpenFromFile);
+        StartFordFulkersonCommand = new RelayCommand(StartFordFulkerson);
     }
 
     public OrientedRedactorViewModel() { }
@@ -300,7 +305,7 @@ public sealed class OrientedRedactorViewModel : INotifyPropertyChanged
                     Height = 50,
                     Width = 50,
                     Fill = Brushes.Transparent,
-                    Stroke = Brushes.Black,
+                    Stroke = _color,
                     DataContext = edgeViewModel
                 };
                 var box = new TextBox
@@ -335,7 +340,7 @@ public sealed class OrientedRedactorViewModel : INotifyPropertyChanged
                 {
                     HeadHeight = 10,
                     HeadWidth = 10,
-                    Stroke = Brushes.Black,
+                    Stroke = _color,
                     DataContext = edgeViewModel
                 };
                 var box = new TextBox
@@ -404,7 +409,7 @@ public sealed class OrientedRedactorViewModel : INotifyPropertyChanged
                 Height = 50,
                 Width = 50,
                 Fill = Brushes.Transparent,
-                Stroke = Brushes.Black,
+                Stroke = _color,
                 DataContext = edgeViewModel
             };
             var box = new TextBox
@@ -439,7 +444,7 @@ public sealed class OrientedRedactorViewModel : INotifyPropertyChanged
             {
                 HeadHeight = 10,
                 HeadWidth = 10,
-                Stroke = Brushes.Black,
+                Stroke = _color,
                 DataContext = edgeViewModel
             };
             var box = new TextBox
@@ -562,6 +567,141 @@ public sealed class OrientedRedactorViewModel : INotifyPropertyChanged
         catch (Exception ex)
         {
             _dialogService.ShowMessage(ex.Message);
+        }
+    }
+
+    private void StartFordFulkerson(object? o)
+    {
+        var adjList = new List<int>[VertexViewModels.Count];
+        int i = 0;
+        foreach (var vertexViewModel in VertexViewModels)
+        {
+            adjList[i] = new List<int>();
+            var edges = vertexViewModel.Edges
+                .Where(t => t.Item2 == 1)
+                .Select(t => t.Item1)
+                .ToList();
+
+            foreach (var v in VertexViewModels)
+            {
+                int weight = edges.FirstOrDefault(e => e.Vertex2.Equals(v))?.Weight ?? 0;
+                adjList[i].Add(weight);
+            }
+
+            i++;
+        }
+
+        var chooseWindow = new FordFulkersonChooseWindow(VertexViewModels);
+        int index1 = 0;
+        int index2 = VertexViewModels.Count - 1;
+        if (chooseWindow.ShowDialog() == true)
+        {
+            index1 = VertexViewModels.IndexOf(chooseWindow.SelectedItem1 ?? VertexViewModels[0]);
+            index2 = VertexViewModels.IndexOf(chooseWindow.SelectedItem2 ?? VertexViewModels[^1]);
+        }
+
+        var algorithm = new FordFulkerson(VertexViewModels.Count, 
+            VertexViewModels.Select(v => v.Text).ToArray());
+        var steps = algorithm.StartFordFulkerson(adjList, index1, index2);
+        HandleSteps(steps);
+    }
+
+    private async void HandleSteps(List<FordFulkersonStep> steps)
+    {
+        _reverseEdges.Clear();
+        var stepStrings = new ObservableCollection<string>();
+        var stepsWindow = new StepsWindow(stepStrings);
+        stepsWindow.Show();
+        foreach (var step in steps)
+        {
+            switch (step.StepType)
+            {
+                case FordFulkersonStepEnum.MaxFlow:
+                    stepStrings.Add($"Найден максимальный поток и он равен {step.MaxFlow}");
+                    break;
+                case FordFulkersonStepEnum.FindNewPath:
+                    stepStrings.Add("Нашли новый маршрут между истоком и стоком");
+                    LightNewPath(step.NewPath!);
+                    break;
+                case FordFulkersonStepEnum.MinFlowInNewPath:
+                    stepStrings.Add($"Нашли минимальный поток в найденном пути.\nОн равен {step.MinFlowInNewPath}");
+                    break;
+                case FordFulkersonStepEnum.AddReverseEdge:
+                    stepStrings.Add(
+                        $"Строим \"обратное\" ребро между вершинами " +
+                        $"\"{VertexViewModels[step.ReverseEdgeFromIndex]}\" и \"{VertexViewModels[step.ReverseEdgeToIndex]}\"");
+                    AddReverseEdge(step.ReverseEdgeFromIndex, step.ReverseEdgeToIndex, step.ReverseEdgeWeight);
+                    break;
+                case FordFulkersonStepEnum.AddMinFlowToMaxFlow:
+                    stepStrings.Add("Прибалвяем найденный минимальный поток к счётчику максимального потока \nвсей сети.");
+                    break;
+                case FordFulkersonStepEnum.StartBfs:
+                    stepStrings.Add("Начинаем обход графа в ширину для поиска нового пути от истока до стока");
+                    break;
+                case FordFulkersonStepEnum.EnqueueValue:
+                    stepStrings.Add($"Заходим в вершину {VertexViewModels[step.EnqueueVertexWithIndex]},\n добавляем её в очередь и помечаем как пройденную");
+                    break;
+                default:
+                    continue;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+        
+        _dialogService.ShowMessage($"Алгоритм закончен!\nМаксимальный поток = {steps[^1].MaxFlow}");
+        ResetGraphState();
+    }
+
+    private void LightNewPath(IEnumerable<string> path)
+    {
+        path = path.Reverse();
+        var r = new Random();
+        _color = new SolidColorBrush(Color.FromRgb((byte)r.Next(1, 255), 
+            (byte)r.Next(1, 255), (byte)r.Next(1, 233)));
+        VertexViewModel? prevVertex = null;
+        foreach (var vertex in path
+                     .Select(vertexText => VertexViewModels
+                         .First(v => v.Text == vertexText)))
+        {
+            vertex.Color = _color;
+            if (prevVertex is not null)
+            {
+                var edge = _edgeViewModels
+                    .First(e => e.Vertex1.Equals(prevVertex) && e.Vertex2.Equals(vertex));
+                edge.Line.Stroke = _color;
+            }
+
+            prevVertex = vertex;
+        }
+    }
+
+    private void AddReverseEdge(int from, int to, int weight)
+    {
+        SelectedVertex1 = VertexViewModels[from];
+        SelectedVertex2 = VertexViewModels[to];
+        CreateEdgeViewModel(weight);
+        _reverseEdges.Add(_edgeViewModels[^1]);
+        SelectedVertex1 = null;
+        SelectedVertex2 = null;
+    }
+    
+    private void ResetGraphState()
+    {
+        foreach (var v in VertexViewModels)
+        {
+            v.Color = Brushes.Aqua;
+        }
+
+        foreach (var e in _edgeViewModels)
+        {
+            e.Line.Stroke = Brushes.Black;
+        }
+
+        foreach (var reverseEdge in _reverseEdges)
+        {
+            _edgeViewModels.Remove(reverseEdge);
+            _window.CanvasMain.Children.Remove(reverseEdge.Box);
+            _window.CanvasMain.Children.Remove(reverseEdge.Line);
         }
     }
     

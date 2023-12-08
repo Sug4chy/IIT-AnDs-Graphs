@@ -9,6 +9,6 @@
         <ListBox
             Name="Steps"
             Height="500"
-            Width="250"/>
+            Width="500"/>
     </Grid>
 </Window>

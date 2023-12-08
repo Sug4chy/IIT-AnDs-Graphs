@@ -6,21 +6,21 @@
         xmlns:viewModel="clr-namespace:AnDS_lab5.ViewModel"
         mc:Ignorable="d"
         Title="OrientedRedactorWindow" Height="537" Width="810">
-   <Window.DataContext>
-        <viewModel:OrientedRedactorViewModel/>
+    <Window.DataContext>
+        <viewModel:OrientedRedactorViewModel />
     </Window.DataContext>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition
-                Height="20"/>
+                Height="20" />
             <RowDefinition
-                Height="480"/>
+                Height="480" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition
-                Width="600"/>
+                Width="600" />
             <ColumnDefinition
-                Width="200"/>
+                Width="200" />
         </Grid.ColumnDefinitions>
         <Menu
             Grid.Row="0"
@@ -30,27 +30,19 @@
                 Header="Файл">
                 <MenuItem
                     Header="Сохранить"
-                    Command="{Binding SaveToFileCommand}"/>
+                    Command="{Binding SaveToFileCommand}" />
                 <MenuItem
                     Header="Загрузить"
-                    Command="{Binding OpenFromFileCommand}"/>
+                    Command="{Binding OpenFromFileCommand}" />
             </MenuItem>
             <MenuItem
                 Header="Алгоритмы">
                 <MenuItem
-                    Header="Обход в глубину (DFS)"
-                    Command="{Binding StartDfsCommand}"/>
-                <MenuItem
-                    Header="Обход в ширину (BFS)"
-                    Command="{Binding StartBfsCommand}"/>
+                    Header="Алгортм Форда-Фалкерсона"
+                    Command="{Binding StartFordFulkersonCommand}"/>
             </MenuItem>
             <MenuItem
-                Header="Открыть">
-                <MenuItem
-                    Header="Редактор ориентированных графов"/>
-            </MenuItem>
-            <MenuItem
-                Header="Справка по алгоритмам"/>
+                Header="Справка по алгоритмам" />
         </Menu>
         <Canvas
             Grid.Row="1"
@@ -59,7 +51,7 @@
             Height="450"
             Width="800"
             PreviewMouseMove="CanvasMain_OnPreviewMouseMove"
-            PreviewMouseUp="CanvasMain_OnPreviewMouseUp"/>
+            PreviewMouseUp="CanvasMain_OnPreviewMouseUp" />
         <Border
             Grid.Column="1"
             Grid.Row="1"
@@ -70,12 +62,12 @@
                     Height="30"
                     Margin="0 10 0 5"
                     Content="Добавить вершину"
-                    Command="{Binding AddVertexCommand}"/>
+                    Command="{Binding AddVertexCommand}" />
                 <Button
                     Height="30"
                     Margin="0 5 0 5"
                     Content="Добавить ребро"
-                    Command="{Binding AddEdgeCommand}"/>
+                    Command="{Binding AddEdgeCommand}" />
                 <StackPanel
                     Name="ComboBoxes"
                     Visibility="Hidden"
@@ -86,27 +78,27 @@
                         Width="75"
                         Margin="10 0 15 0"
                         ItemsSource="{Binding VertexViewModels}"
-                        SelectedItem="{Binding SelectedVertex1}"/>
+                        SelectedItem="{Binding SelectedVertex1}" />
                     <ComboBox
                         Width="75"
                         Margin="15 0 10 0"
                         ItemsSource="{Binding VertexViewModels}"
-                        SelectedItem="{Binding SelectedVertex2}"/>
+                        SelectedItem="{Binding SelectedVertex2}" />
                 </StackPanel>
                 <TextBox
                     Height="30"
                     Margin="0 0 0 5"
-                    Text="{Binding Filename, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    Text="{Binding Filename, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 <Button
                     Height="30"
                     Margin="0 5 0 5"
                     Content="Режим добавления"
-                    Command="{Binding SetCreatingModeCommand}"/>
+                    Command="{Binding SetCreatingModeCommand}" />
                 <Button
                     Height="30"
                     Margin="0 5 0 10"
                     Content="Режим удаления"
-                    Command="{Binding SetDeletingModeCommand}"/>
+                    Command="{Binding SetDeletingModeCommand}" />
             </StackPanel>
         </Border>
     </Grid>
