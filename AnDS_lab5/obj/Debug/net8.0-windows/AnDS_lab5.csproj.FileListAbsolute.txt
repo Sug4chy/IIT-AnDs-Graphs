@@ -31,3 +31,5 @@ C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\
 C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\OrientedRedactorWindow.baml
 C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\FordFulkersonChooseWindow.g.cs
 C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\FordFulkersonChooseWindow.baml
+C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\DijkstraChooseWindow.baml
+C:\Users\Stepan\RiderProjects\AnDS_lab5\AnDS_lab5\obj\Debug\net8.0-windows\View\DijkstraChooseWindow.g.cs

@@ -43,6 +43,9 @@
                 <MenuItem
                     Header="Обход в ширину (BFS)"
                     Command="{Binding StartBfsCommand}"/>
+                <MenuItem
+                    Header="Алгоритм Дейкстры"
+                    Command="{Binding StartDijkstraCommand}"/>
             </MenuItem>
             <MenuItem
                 Header="Открыть">

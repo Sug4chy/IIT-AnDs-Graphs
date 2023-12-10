@@ -51,7 +51,7 @@ public sealed class VertexViewModel : INotifyPropertyChanged
             Canvas.SetTop(Ellipse, _y);
         }
     }
-    
+
     public string Text
     {
         get => _text;
@@ -87,7 +87,7 @@ public sealed class VertexViewModel : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-    
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -104,7 +104,7 @@ public sealed class VertexViewModel : INotifyPropertyChanged
                 circleEdgeViewModel.X = _x;
                 continue;
             }
-            
+
             if (edgePair.Item2 == 1)
             {
                 edgePair.Item1.X1 = _x;
@@ -125,7 +125,7 @@ public sealed class VertexViewModel : INotifyPropertyChanged
                 circleEdgeViewModel.Y = _y;
                 continue;
             }
-            
+
             if (edgePair.Item2 == 1)
             {
                 edgePair.Item1.Y1 = _y;
@@ -151,17 +151,13 @@ public sealed class VertexViewModel : INotifyPropertyChanged
     }
 
     public override int GetHashCode()
-    {
-        return HashCode.Combine(_text, _x, _y, _box, _ellipse);
-    }
-
+        => HashCode.Combine(_text, _x, _y, _box, _ellipse);
+    
     public Vertex ToVertex()
-    {
-        return new Vertex
+        => new()
         {
             X = X,
             Y = Y,
             Content = Text
         };
-    }
 }

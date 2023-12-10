@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,6 +29,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly DefaultDialogService _dialogService = new();
     private string _filename = "";
     private readonly List<EdgeViewModel> _edgeViewModels = new();
+    private readonly List<(TextBlock, VertexViewModel)> _labels = new();
 
     public ObservableCollection<VertexViewModel> VertexViewModels { get; } = new();
 
@@ -80,6 +82,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand StartDfsCommand { get; } = null!;
     public ICommand StartBfsCommand { get; } = null!;
     public ICommand OpenOrientedRedactorCommand { get; } = null!;
+    public ICommand StartDijkstraCommand { get; } = null!;
 
     public MainViewModel(MainWindow window)
     {
@@ -93,6 +96,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         StartDfsCommand = new RelayCommand(StartDfs);
         StartBfsCommand = new RelayCommand(StartBfs);
         OpenOrientedRedactorCommand = new RelayCommand(OpenOrientedRedactor);
+        StartDijkstraCommand = new RelayCommand(StartDijkstra);
     }
 
     public MainViewModel() { }
@@ -538,16 +542,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
             VertexViewModels.Clear();
             _vertexCounter = 0;
             _edgeCounter = 0;
-            var vertexes = new HashSet<Vertex>();
             foreach (var edge in edges)
             {
-                vertexes.Add(edge.VertexA);
-                vertexes.Add(edge.VertexB);
-            }
-
-            foreach (var vertex in vertexes)
-            {
-                CreateVertexViewModel(vertex.Content, vertex.X, vertex.Y);
+                if (!VertexViewModels.Any(v => v.ToVertex().Equals(edge.VertexA)))
+                {
+                    CreateVertexViewModel(edge.VertexA.Content, edge.VertexA.X, edge.VertexA.Y);
+                }
+                
+                if (!VertexViewModels.Any(v => v.ToVertex().Equals(edge.VertexB)))
+                {
+                    CreateVertexViewModel(edge.VertexB.Content, edge.VertexB.X, edge.VertexB.Y);
+                }
             }
 
             foreach (var edge in edges)
@@ -636,6 +641,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             e.Thickness = 1d;
         }
+
+        foreach (var label in _labels)
+        {
+            _window.CanvasMain.Children.Remove(label.Item1);
+        }
     }
 
     private void StartBfs(object? o)
@@ -692,6 +702,87 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void OpenOrientedRedactor(object? o)
         => new OrientedRedactorWindow().Show();
+
+    private void StartDijkstra(object? o)
+    {
+        var edges = _edgeViewModels.Select(ev => ev.ToEdge());
+        var vertices = VertexViewModels.Select(vv => vv.ToVertex()).ToArray();
+        var algorithm = new DijkstraAlgorithm(vertices, edges, false);
+
+        var chooseWindow = new DijkstraChooseWindow(VertexViewModels);
+        if (chooseWindow.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var begin = vertices[chooseWindow.ComboBox1.SelectedIndex];
+        var end = vertices[chooseWindow.ComboBox2.SelectedIndex];
+        var steps = algorithm.Run(begin, end);
+        HandleSteps(steps);
+    }
+
+    private async void HandleSteps(List<DijkstraStep> steps)
+    {
+        _labels.Clear();
+        var stepStrings = new ObservableCollection<string>();
+        var stepsWindow = new StepsWindow(stepStrings);
+        stepsWindow.Show();
+        foreach (var step in steps)
+        {
+            switch (step.StepType)
+            {
+                case DijkstraStepEnum.FindMinPath:
+                    stepStrings.Add($"Нашли минимальный путь между вершинами: {step.ResultPath}");
+                    break;
+                case DijkstraStepEnum.CheckedVertex:
+                    var a = VertexViewModels
+                        .First(v => v.Text == step.CheckedVertex?.Content);
+                    a.Color = Brushes.Red;
+                    stepStrings.Add($"Отметили вершину {a}, с ней мы больше дел не имеем");
+                    break;
+                case DijkstraStepEnum.SetValueLabel:
+                    SetLabel(step.NewLabel, step.CheckedVertex!);
+                    stepStrings.Add($"Устанавливаем \"метку\" {step.NewLabel} на вершину {step.CheckedVertex}");
+                    break;
+                default:
+                    continue;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+        
+        _dialogService.ShowMessage("Алгоритм завершил свою работу.");
+        ResetGraphState();
+    }
+
+    private void SetLabel(double label, Vertex v)
+    {
+        double x = v.X + 17.5;
+        double y = v.Y + 5d;
+        var (textBlock, vertexViewModel) = _labels
+            .FirstOrDefault(tuple => tuple.Item2.Text == v.Content);
+        var block = new TextBlock
+        {
+            Text = label.ToString(CultureInfo.InvariantCulture),
+            Height = 15,
+            Width = 15
+        };
+        Canvas.SetTop(block, y);
+        Canvas.SetLeft(block, x);
+        Panel.SetZIndex(block, 2);
+        
+        if (vertexViewModel is null)
+        {
+            _labels.Add((block, VertexViewModels.FirstOrDefault(vv => vv.Text == v.Content)!));
+            _window.CanvasMain.Children.Add(block);
+        }
+        else
+        {
+            _window.CanvasMain.Children.Remove(textBlock);
+            textBlock = block;
+            _window.CanvasMain.Children.Add(textBlock);
+        }
+    }
     
     public event PropertyChangedEventHandler? PropertyChanged;
 
