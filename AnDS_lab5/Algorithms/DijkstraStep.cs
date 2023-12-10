@@ -15,4 +15,5 @@ public enum DijkstraStepEnum
     FindMinPath,
     CheckedVertex,
     SetValueLabel,
+    UncheckedVertex,
 }

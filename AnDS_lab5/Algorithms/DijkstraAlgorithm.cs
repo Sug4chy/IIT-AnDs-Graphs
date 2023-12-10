@@ -14,7 +14,7 @@ public class DijkstraAlgorithm(IReadOnlyList<Vertex> vertices, IEnumerable<Edge>
         _beginPoint.ValueLabel = 0;
         OneStep(begin);
         var vertex = begin;
-        for (int i = 0; i < vertices.Count; i++)
+        while (true)
         {
             vertex = GetAnotherUncheckedVertex(vertex);
             if (vertex is null)
@@ -38,11 +38,6 @@ public class DijkstraAlgorithm(IReadOnlyList<Vertex> vertices, IEnumerable<Edge>
         foreach (var nextVertex in Pred(v))
         {
             var nv = vertices.First(vertex => vertex.Content == nextVertex.Content);
-            if (nv.IsChecked)
-            {
-                continue;
-            }
-            
             double newLabel = v.ValueLabel +
                               (isOriented 
                                   ? GetEdgeOriented(nv, v).Weight 
@@ -58,7 +53,19 @@ public class DijkstraAlgorithm(IReadOnlyList<Vertex> vertices, IEnumerable<Edge>
             {
                 StepType = DijkstraStepEnum.SetValueLabel,
                 NewLabel = newLabel,
-                CheckedVertex = nextVertex
+                CheckedVertex = nv
+            });
+
+            if (!nv.IsChecked)
+            {
+                continue;
+            }
+
+            nv.IsChecked = false;
+            _steps.Add(new DijkstraStep
+            {
+                StepType = DijkstraStepEnum.UncheckedVertex,
+                CheckedVertex = nv
             });
         }
 

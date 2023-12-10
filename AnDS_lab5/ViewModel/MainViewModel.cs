@@ -30,6 +30,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string _filename = "";
     private readonly List<EdgeViewModel> _edgeViewModels = new();
     private readonly List<(TextBlock, VertexViewModel)> _labels = new();
+    private readonly List<EdgeViewModel> _ostovEdges = new();
 
     public ObservableCollection<VertexViewModel> VertexViewModels { get; } = new();
 
@@ -83,6 +84,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand StartBfsCommand { get; } = null!;
     public ICommand OpenOrientedRedactorCommand { get; } = null!;
     public ICommand StartDijkstraCommand { get; } = null!;
+    public ICommand StartPrimCommand { get; } = null!;
 
     public MainViewModel(MainWindow window)
     {
@@ -97,6 +99,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         StartBfsCommand = new RelayCommand(StartBfs);
         OpenOrientedRedactorCommand = new RelayCommand(OpenOrientedRedactor);
         StartDijkstraCommand = new RelayCommand(StartDijkstra);
+        StartPrimCommand = new RelayCommand(StartPrim);
     }
 
     public MainViewModel() { }
@@ -640,6 +643,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         foreach (var e in _edgeViewModels)
         {
             e.Thickness = 1d;
+            e.Line.Stroke = Brushes.Black;
         }
 
         foreach (var label in _labels)
@@ -744,6 +748,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     SetLabel(step.NewLabel, step.CheckedVertex!);
                     stepStrings.Add($"Устанавливаем \"метку\" {step.NewLabel} на вершину {step.CheckedVertex}");
                     break;
+                case DijkstraStepEnum.UncheckedVertex:
+                    var b = VertexViewModels
+                        .First(v => v.Text == step.CheckedVertex?.Content);
+                    b.Color = Brushes.Aqua;
+                    stepStrings.Add($"Кратчайший путь до вершины {b} изменился, поэтому нужно будет ещё раз проверить её соседей.");
+                    break;
                 default:
                     continue;
             }
@@ -773,14 +783,109 @@ public sealed class MainViewModel : INotifyPropertyChanged
         
         if (vertexViewModel is null)
         {
-            _labels.Add((block, VertexViewModels.FirstOrDefault(vv => vv.Text == v.Content)!));
             _window.CanvasMain.Children.Add(block);
+            _labels.Add((block, VertexViewModels.FirstOrDefault(vv => vv.Text == v.Content)!));
         }
         else
         {
             _window.CanvasMain.Children.Remove(textBlock);
-            textBlock = block;
-            _window.CanvasMain.Children.Add(textBlock);
+            _window.CanvasMain.Children.Add(block);
+            _labels.Add((block, vertexViewModel));
+        }
+    }
+
+    private void StartPrim(object? o)
+    {
+        _ostovEdges.Clear();
+        var chooseWindow = new VertexChooseWindow(VertexViewModels);
+        int index = chooseWindow.ShowDialog() == true 
+            ? chooseWindow.ComboBox.SelectedIndex 
+            : 0;
+
+        var adjList = new List<int>[VertexViewModels.Count];
+        for (int i = 0; i < VertexViewModels.Count; i++)
+        {
+            adjList[i] = new List<int>();
+            foreach (var t in VertexViewModels)
+            {
+                adjList[i].Add(_edgeViewModels
+                                   .FirstOrDefault(e => e.Vertex1.Equals(VertexViewModels[i]) 
+                                                        && e.Vertex2.Equals(t))?.Weight ?? 0);
+            }
+        }
+
+        var algorithm = new PrimAlgorithm();
+        var steps = algorithm.RunAlgorithm(adjList, index);
+        HandleSteps(steps);
+    }
+
+    private async void HandleSteps(List<PrimStep> steps)
+    {
+        var stepStrings = new ObservableCollection<string>();
+        var stepsWindow = new StepsWindow(stepStrings);
+        stepsWindow.Show();
+        foreach (var step in steps)
+        {
+            switch (step.StepType)
+            {
+                case PrimStepEnum.AddEdge:
+                    stepStrings.Add($"Добавляем в остовное дерево ребро между вершинами {VertexViewModels[step.FromIndex]} и {VertexViewModels[step.ToIndex]}");
+                    var b = VertexViewModels[step.FromIndex];
+                    var c = VertexViewModels[step.ToIndex];
+                    var d = _edgeViewModels.First(e =>
+                        e.Vertex1.Equals(b) && e.Vertex2.Equals(c) || e.Vertex1.Equals(c) && e.Vertex2.Equals(b));
+                    d.Line.Stroke = Brushes.Red;
+                    d.Thickness = 2.5d;
+                    c.Color = Brushes.Red;
+                    _ostovEdges.Add(d);
+                    break;
+                case PrimStepEnum.Start:
+                    stepStrings.Add($"Начинаем работу алгоритма и сразу добавляем в остовное дерево вершину {VertexViewModels[step.FromIndex]}");
+                    var a = VertexViewModels[step.FromIndex];
+                    a.Color = Brushes.Red;
+                    break;
+                case PrimStepEnum.CheckEdge:
+                    stepStrings.Add(
+                        $"Проверяем рёбра, связанные с вершиной {VertexViewModels[step.FromIndex]}");
+                    break;
+                default:
+                    continue;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
+        var result = MessageBox.Show("Алгоритм завершил свою работу. Хотите сохранить граф вместе с его остовным деревом?", "Finish", MessageBoxButton.YesNo, MessageBoxImage.Information);
+        if (result == MessageBoxResult.Yes)
+        {
+            SaveWithOstovTree();
+        }
+        
+        ResetGraphState();
+    }
+
+    private void SaveWithOstovTree()
+    {
+        SaveToFile(null);
+        SaveOstovTree();
+    }
+
+    private void SaveOstovTree()
+    {
+        try
+        {
+            if (!_dialogService.SaveFileDialog())
+            {
+                return;
+            }
+
+            var edges = _ostovEdges.Select(ev => ev.ToEdge()).ToList();
+            _fileService.Save($"{_dialogService.FilePath}\\{Filename}-ostov-tree.json", edges);
+            _dialogService.ShowMessage("Сохранено в файл!");
+        }
+        catch (Exception ex)
+        {
+            _dialogService.ShowMessage(ex.Message);
         }
     }
     
