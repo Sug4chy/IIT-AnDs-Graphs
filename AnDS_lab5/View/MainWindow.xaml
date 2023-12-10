@@ -56,8 +56,6 @@
                     Header="Редактор ориентированных графов"
                     Command="{Binding OpenOrientedRedactorCommand}"/>
             </MenuItem>
-            <MenuItem
-                Header="Справка по алгоритмам"/>
         </Menu>
         <Canvas
             Grid.Row="1"

@@ -1,5 +1,6 @@
 ﻿namespace AnDS_lab5.Model;
 
+// ReSharper disable once NonReadonlyMemberInGetHashCode
 public class Vertex
 {
     public string Content { get; init; } = null!;
@@ -9,8 +10,16 @@ public class Vertex
     public bool IsChecked { get; set; }
     public Vertex PredVertex { get; set; } = null!;
 
-    public bool Equals(Vertex other) 
-        => Content.Equals(other.Content) 
-           && Math.Abs(X - other.X) < 0.000001 
-           && Math.Abs(Y - other.Y) < 0.000001;
+    public override bool Equals(object? o)
+    {
+        if (o is not Vertex other) return false;
+        return Content.Equals(other.Content)
+            && Math.Abs(X - other.X) < 0.000001
+            && Math.Abs(Y - other.Y) < 0.000001;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Content, X, Y, ValueLabel, IsChecked, PredVertex);
+    }
 }

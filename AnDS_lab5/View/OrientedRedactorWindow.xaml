@@ -41,8 +41,6 @@
                     Header="Алгортм Форда-Фалкерсона"
                     Command="{Binding StartFordFulkersonCommand}"/>
             </MenuItem>
-            <MenuItem
-                Header="Справка по алгоритмам" />
         </Menu>
         <Canvas
             Grid.Row="1"
