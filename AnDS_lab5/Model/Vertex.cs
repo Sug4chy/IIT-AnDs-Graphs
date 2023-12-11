@@ -18,8 +18,9 @@ public class Vertex
             && Math.Abs(Y - other.Y) < 0.000001;
     }
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Content, X, Y, ValueLabel, IsChecked, PredVertex);
-    }
+    public override int GetHashCode() 
+        => HashCode.Combine(Content, X, Y, ValueLabel, IsChecked, PredVertex);
+    
+    public override string ToString() 
+        => Content;
 }
