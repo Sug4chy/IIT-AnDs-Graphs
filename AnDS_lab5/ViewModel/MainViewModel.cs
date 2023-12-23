@@ -607,7 +607,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         var stepsString = new ObservableCollection<string>();
         var stepsWindow = new StepsWindow(stepsString);
         stepsWindow.Show();
-        foreach (var step in steps)
+        var dfsSteps = steps as DfsStep[] ?? steps.ToArray();
+        foreach (var step in dfsSteps)
         {
             if (step.From == "")
             {
@@ -617,7 +618,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             }
             else
             {
-                stepsString.Add($"Посещаем вершину {step.To} из вершины {step.From}");
+                stepsString.Add($"Посещаем вершину {step.To} из вершины {step.From}\nМаршрут обхода в данный момент: {step.CurrentPath}");
                 var vertex = VertexViewModels.First(v => v.Text == step.To);
                 vertex.Color = Brushes.Red;
                 var edge = _edgeViewModels.First(e => 
@@ -629,6 +630,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
         
+        stepsString.Add($"Итог обхода: {dfsSteps[^1].CurrentPath}");
         MessageBox.Show("Обход окончен!");
         ResetGraphState();
     }
@@ -678,7 +680,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         var stepsString = new ObservableCollection<string>();
         var stepsWindow = new StepsWindow(stepsString);
         stepsWindow.Show();
-        foreach (var step in steps)
+        var bfsSteps = steps as BfsStep[] ?? steps.ToArray();
+        foreach (var step in bfsSteps)
         {
             if (step.From == "")
             {
@@ -688,7 +691,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             }
             else
             {
-                stepsString.Add($"Посещаем вершину {step.To} из вершины {step.From}");
+                stepsString.Add($"Посещаем вершину {step.To} из вершины {step.From}\nМаршрут обхода в данный момент: {step.CurrentPath}");
                 var vertex = VertexViewModels.First(v => v.Text == step.To);
                 vertex.Color = Brushes.Blue;
                 var edge = _edgeViewModels.First(e => 
@@ -700,6 +703,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
         
+        stepsString.Add($"Итог обхода: {bfsSteps[^1].CurrentPath}");
         MessageBox.Show("Обход окончен!");
         ResetGraphState();
     }
@@ -746,13 +750,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     break;
                 case DijkstraStepEnum.SetValueLabel:
                     SetLabel(step.NewLabel, step.CheckedVertex!);
-                    stepStrings.Add($"Устанавливаем \"метку\" {step.NewLabel} на вершину {step.CheckedVertex}");
+                    stepStrings.Add($"Устанавливаем \"метку\" {step.NewLabel} на вершину {step.CheckedVertex}, потому что она оказалась меньше предыдущей\n (либо её там до этого не было)");
                     break;
                 case DijkstraStepEnum.UncheckedVertex:
                     var b = VertexViewModels
                         .First(v => v.Text == step.CheckedVertex?.Content);
                     b.Color = Brushes.Aqua;
                     stepStrings.Add($"Кратчайший путь до вершины {b} изменился, поэтому нужно будет ещё раз проверить её соседей.");
+                    break;
+                case DijkstraStepEnum.LabelsComparison:
+                    stepStrings.Add($"Сравниваем новую \"метку\" {step.NewLabel} со старой \"меткой\" {step.OldLabel} на вершине {step.CheckedVertex}");
                     break;
                 default:
                     continue;

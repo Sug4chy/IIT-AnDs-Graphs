@@ -4,6 +4,7 @@ public class Dfs(int v)
 {
     private readonly Dictionary<string, List<string>?> _adjList = new(v);
     private readonly List<DfsStep> _steps = new();
+    private readonly List<string> _path = new();
 
     public void AddEdge(string from, string to)
     {
@@ -29,7 +30,8 @@ public class Dfs(int v)
         foreach (string neighbor in _adjList[v]!
                      .Where(neighbor => !visited[neighbor]))
         {
-            _steps.Add(new DfsStep { From = v, To = neighbor });
+            _path.Add(neighbor);
+            _steps.Add(new DfsStep { From = v, To = neighbor, CurrentPath = string.Join(", ", _path)});
             DfsUtil(neighbor, visited);
         }
     }
@@ -37,7 +39,8 @@ public class Dfs(int v)
     public IEnumerable<DfsStep> DfsStart(string startVertex)
     {
         var visited = _adjList.Keys.ToDictionary(v => v, _ => false);
-        _steps.Add(new DfsStep { From = "", To = startVertex });
+        _steps.Add(new DfsStep { From = "", To = startVertex, CurrentPath = "" });
+        _path.Add(startVertex);
         DfsUtil(startVertex, visited);
         return _steps;
     }

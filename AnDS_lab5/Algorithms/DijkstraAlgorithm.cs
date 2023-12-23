@@ -42,10 +42,22 @@ public class DijkstraAlgorithm(IReadOnlyList<Vertex> vertices, IEnumerable<Edge>
                               (isOriented 
                                   ? GetEdgeOriented(nv, v).Weight 
                                   : GetEdge(nv, v).Weight);
+            if (nv.ValueLabel > -1)
+            {
+                _steps.Add(new DijkstraStep
+                {
+                    StepType = DijkstraStepEnum.LabelsComparison,
+                    OldLabel = nv.ValueLabel,
+                    NewLabel = newLabel,
+                    CheckedVertex = nv
+                });
+            }
+            
             if (nv.ValueLabel < newLabel && nv.ValueLabel > -1)
             {
                 continue;
             }
+            
 
             nv.ValueLabel = newLabel;
             nv.PredVertex = v;
@@ -144,7 +156,7 @@ public class DijkstraAlgorithm(IReadOnlyList<Vertex> vertices, IEnumerable<Edge>
     {
         var listOfPoints = new List<Vertex>();
         var temp = end;
-        while (temp != _beginPoint)
+        while (!Equals(temp, _beginPoint))
         {
             listOfPoints.Add(temp);
             temp = temp.PredVertex;

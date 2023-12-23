@@ -4,6 +4,7 @@ public class Bfs(int v)
 {
     private readonly Dictionary<string, List<string>?> _adjList = new(v);
     private readonly List<BfsStep> _steps = new();
+    private readonly List<string> _path = new();
 
     public void AddEdge(string from, string to)
     {
@@ -34,7 +35,8 @@ public class Bfs(int v)
         visited[v] = true;
         foreach (string neighbour in _adjList[v]!.Where(neighbour => !visited[neighbour]))
         {
-            _steps.Add(new BfsStep { From = v, To = neighbour });
+            _path.Add(neighbour);
+            _steps.Add(new BfsStep { From = v, To = neighbour, CurrentPath = string.Join(", ", _path)});
             visited[neighbour] = true;
         }
 
@@ -47,7 +49,8 @@ public class Bfs(int v)
     public IEnumerable<BfsStep> BfsStart(string startVertex)
     {
         var visited = _adjList.Keys.ToDictionary(v => v, _ => false);
-        _steps.Add(new BfsStep { From = "", To = startVertex });
+        _steps.Add(new BfsStep { From = "", To = startVertex, CurrentPath = "" });
+        _path.Add(startVertex);
         BfsUtil(startVertex, visited);
         return _steps;
     }

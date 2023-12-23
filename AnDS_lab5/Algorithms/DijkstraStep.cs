@@ -8,6 +8,7 @@ public record DijkstraStep
     public DijkstraStepEnum StepType;
     public Vertex? CheckedVertex;
     public double NewLabel;
+    public double OldLabel;
 }
 
 public enum DijkstraStepEnum
@@ -16,4 +17,5 @@ public enum DijkstraStepEnum
     CheckedVertex,
     SetValueLabel,
     UncheckedVertex,
+    LabelsComparison
 }
